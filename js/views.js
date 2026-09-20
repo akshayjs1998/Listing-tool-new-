@@ -528,12 +528,21 @@ function selectAndDetail(id) {
   renderTableRows();
   renderDetail();
   const d = document.getElementById("detail-panel");
-  if (d) d.classList.add("mobile-open");
+  if (d) {
+    d.classList.add("mobile-open");
+    if (window.innerWidth <= 860) {
+      setTimeout(() => {
+        d.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 60);
+    }
+  }
 }
 
 function closeMobileDetail() {
   const d = document.getElementById("detail-panel");
   if (d) d.classList.remove("mobile-open");
+  const l = document.getElementById("products-layout");
+  if (l) l.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 function navPrev() {
@@ -586,29 +595,33 @@ function renderProducts() {
 
 function renderProductsInto(c) {
   c.innerHTML = `
-<div id="products-layout" style="display:grid;grid-template-columns:1fr 320px;gap:12px;">
-  <div>
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem;">
+<div id="products-layout">
+  <div style="min-width:0;width:100%;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem;flex-wrap:wrap;gap:8px;">
       <div style="font-size:14px;font-weight:600;">${products.length} products <span style="font-size:12px;font-weight:400;color:var(--text2);">· ${totalPieces()} pieces</span></div>
       <div style="display:flex;gap:6px;">
         <button class="btn" onclick="addProduct()">+ Add</button>
         <button class="btn primary" onclick="saveCurrentProject();goStep(2);">Review →</button>
       </div>
     </div>
-    <div class="tbl-wrap"><div style="overflow-x:auto;">
+    <div class="scroll-hint">
+      <span>👉 Swipe table sideways to view all columns</span>
+      <span>Dimensions · Details · Photos · Drw · Swatch →</span>
+    </div>
+    <div class="tbl-wrap"><div class="table-scroll-container">
       <table class="tbl"><thead><tr>
-        <th style="width:24px" class="mobile-hide"></th>
-        <th style="width:44px">#</th>
-        <th style="min-width:140px">Product name</th>
-        <th style="width:44px">Qty</th>
-        <th style="min-width:120px" class="mobile-hide">Area / Placement</th>
-        <th style="min-width:120px" class="mobile-hide">Dimensions</th>
-        <th style="min-width:120px" class="mobile-hide">Details</th>
-        <th style="width:32px" class="mobile-hide">📷</th>
-        <th style="width:32px" class="mobile-hide">✏</th>
-        <th style="width:32px" class="mobile-hide">📐</th>
-        <th style="width:32px" class="mobile-hide">🧵</th>
-        <th style="width:22px" class="mobile-hide"></th>
+        <th style="width:24px;"></th>
+        <th style="width:44px;">#</th>
+        <th style="min-width:140px;">Product name</th>
+        <th style="width:46px;">Qty</th>
+        <th style="min-width:120px;">Area / Placement</th>
+        <th style="min-width:120px;">Dimensions</th>
+        <th style="min-width:140px;">Details</th>
+        <th style="width:36px;text-align:center;" title="Product Photo">📷</th>
+        <th style="width:36px;text-align:center;" title="Annotation">✏</th>
+        <th style="width:36px;text-align:center;" title="Technical Drawings">📐</th>
+        <th style="width:36px;text-align:center;" title="Fabric / Swatches">🧵</th>
+        <th style="width:24px;"></th>
       </tr></thead>
       <tbody id="prod-tbody"></tbody></table>
     </div></div>
@@ -618,7 +631,7 @@ function renderProductsInto(c) {
     </div>
   </div>
   <div class="detail" id="detail-panel">
-    <button id="detail-close-btn" onclick="closeMobileDetail()" style="display:none;width:100%;margin-bottom:12px;padding:8px;border:1px solid var(--border);border-radius:6px;background:var(--bg2);font-size:13px;cursor:pointer;color:var(--text2);">← Back to products</button>
+    <button id="detail-close-btn" onclick="closeMobileDetail()" style="display:none;width:100%;margin-bottom:12px;padding:8px;border:1px solid var(--border);border-radius:6px;background:var(--bg2);font-size:13px;cursor:pointer;color:var(--text2);">← Back to products table</button>
     <div style="text-align:center;padding:3rem 1rem;color:var(--text2);">
       <div style="font-size:28px;margin-bottom:8px;opacity:.4;">🖱</div>
       <div style="font-size:13px;">Click a row to edit details</div>
@@ -674,18 +687,18 @@ function renderTableRows() {
   ondragend="dragEnd(event)"
   onclick="selectAndDetail('${p.id}')" 
   style="cursor:pointer;">
-  <td class="mobile-hide" style="padding:2px 4px;cursor:grab;color:var(--text3);font-size:14px;text-align:center;" onclick="event.stopPropagation()" title="Drag to reorder">⠿</td>
+  <td style="padding:2px 4px;cursor:grab;color:var(--text3);font-size:14px;text-align:center;" onclick="event.stopPropagation()" title="Drag to reorder">⠿</td>
   <td data-label="#"><input type="text" style="width:34px;padding:3px 4px;font-size:12px;" value="${esc(p.productNo)}" onclick="event.stopPropagation()" onfocus="this.closest('tr').draggable=false" onblur="this.closest('tr').draggable=!IS_TOUCH_DEVICE" oninput="setField('${p.id}','productNo',this.value)"/></td>
-  <td data-label="Product name"><input type="text" style="padding:3px 5px;font-size:12px;width:100%;" value="${esc(p.name)}" placeholder="Product name" onclick="event.stopPropagation()" onfocus="this.closest('tr').draggable=false" onblur="this.closest('tr').draggable=!IS_TOUCH_DEVICE;checkDuplicateProduct('${p.id}')" oninput="setField('${p.id}','name',this.value)"/></td>
-  <td data-label="Qty"><input type="number" style="width:36px;padding:3px 4px;font-size:12px;text-align:center;" min="1" value="${p.qty}" onclick="event.stopPropagation()" onfocus="this.closest('tr').draggable=false" onblur="this.closest('tr').draggable=!IS_TOUCH_DEVICE" oninput="setField('${p.id}','qty',parseInt(this.value)||1)"/></td>
-  <td class="mobile-hide"><div class="area-wrap"><input type="text" id="area-inp-${p.id}" style="padding:3px 5px;font-size:12px;" value="${esc(p.area)}" placeholder="e.g. Sitout" onclick="event.stopPropagation()" onfocus="this.closest('tr').draggable=false" oninput="setField('${p.id}','area',this.value);showAreaSuggestions('${p.id}',this.value)" onblur="hideAreaSuggestions('${p.id}');this.closest('tr').draggable=!IS_TOUCH_DEVICE"/><div id="area-sug-${p.id}" class="area-suggestions" style="display:none;"></div></div></td>
-  <td class="mobile-hide"><input type="text" style="padding:3px 5px;font-size:12px;" value="${esc(p.dimensions)}" placeholder="120 x 60 cm" onclick="event.stopPropagation()" onfocus="this.closest('tr').draggable=false" onblur="this.closest('tr').draggable=!IS_TOUCH_DEVICE" oninput="setField('${p.id}','dimensions',this.value)"/></td>
-  <td class="mobile-hide"><textarea rows="1" style="padding:3px 5px;font-size:12px;width:100%;resize:vertical;font-family:inherit;line-height:1.4;min-height:24px;" placeholder="e.g. Glass top" onclick="event.stopPropagation()" onfocus="this.closest('tr').draggable=false" onblur="this.closest('tr').draggable=!IS_TOUCH_DEVICE" oninput="setField('${p.id}','details',this.value);this.style.height='auto';this.style.height=this.scrollHeight+'px'">${esc(p.details)}</textarea></td>
-  <td class="mobile-hide" style="text-align:center;">${p.productImage ? '<span style="color:var(--success-text);">✓</span>' : '<span style="color:var(--danger-text);">✗</span>'}</td>
-  <td class="mobile-hide" style="text-align:center;">${p.annotatedImage ? '<span style="color:var(--success-text);">✓</span>' : '<span style="color:var(--text3);">—</span>'}</td>
-  <td class="mobile-hide" style="text-align:center;">${(p.drawings || []).length > 0 ? `<span style="color:var(--success-text);">${p.drawings.length}</span>` : '<span style="color:var(--text3);">—</span>'}</td>
-  <td class="mobile-hide" style="text-align:center;">${(p.swatchImages || []).some(s => s) ? '<span style="color:var(--success-text);">✓</span>' : '<span style="color:var(--text3);">—</span>'}</td>
-  <td class="mobile-hide"><button onclick="event.stopPropagation();delProduct('${p.id}')" style="background:none;border:none;cursor:pointer;color:var(--text2);font-size:12px;padding:2px;">✕</button></td>
+  <td data-label="Product name"><input type="text" style="padding:3px 5px;font-size:12px;width:100%;min-width:130px;" value="${esc(p.name)}" placeholder="Product name" onclick="event.stopPropagation()" onfocus="this.closest('tr').draggable=false" onblur="this.closest('tr').draggable=!IS_TOUCH_DEVICE;checkDuplicateProduct('${p.id}')" oninput="setField('${p.id}','name',this.value)"/></td>
+  <td data-label="Qty"><input type="number" style="width:38px;padding:3px 4px;font-size:12px;text-align:center;" min="1" value="${p.qty}" onclick="event.stopPropagation()" onfocus="this.closest('tr').draggable=false" onblur="this.closest('tr').draggable=!IS_TOUCH_DEVICE" oninput="setField('${p.id}','qty',parseInt(this.value)||1)"/></td>
+  <td data-label="Area / Placement"><div class="area-wrap"><input type="text" id="area-inp-${p.id}" style="padding:3px 5px;font-size:12px;min-width:110px;" value="${esc(p.area)}" placeholder="e.g. Sitout" onclick="event.stopPropagation()" onfocus="this.closest('tr').draggable=false" oninput="setField('${p.id}','area',this.value);showAreaSuggestions('${p.id}',this.value)" onblur="hideAreaSuggestions('${p.id}');this.closest('tr').draggable=!IS_TOUCH_DEVICE"/><div id="area-sug-${p.id}" class="area-suggestions" style="display:none;"></div></div></td>
+  <td data-label="Dimensions"><input type="text" style="padding:3px 5px;font-size:12px;min-width:110px;" value="${esc(p.dimensions)}" placeholder="120 x 60 cm" onclick="event.stopPropagation()" onfocus="this.closest('tr').draggable=false" onblur="this.closest('tr').draggable=!IS_TOUCH_DEVICE" oninput="setField('${p.id}','dimensions',this.value)"/></td>
+  <td data-label="Details"><textarea rows="1" style="padding:3px 5px;font-size:12px;width:100%;min-width:130px;resize:vertical;font-family:inherit;line-height:1.4;min-height:24px;" placeholder="e.g. Glass top" onclick="event.stopPropagation()" onfocus="this.closest('tr').draggable=false" onblur="this.closest('tr').draggable=!IS_TOUCH_DEVICE" oninput="setField('${p.id}','details',this.value);this.style.height='auto';this.style.height=this.scrollHeight+'px'">${esc(p.details)}</textarea></td>
+  <td style="text-align:center;min-width:36px;">${p.productImage ? '<span style="color:var(--success-text);font-weight:bold;">✓</span>' : '<span style="color:var(--danger-text);">✗</span>'}</td>
+  <td style="text-align:center;min-width:36px;">${p.annotatedImage ? '<span style="color:var(--success-text);font-weight:bold;">✓</span>' : '<span style="color:var(--text3);">—</span>'}</td>
+  <td style="text-align:center;min-width:36px;">${(p.drawings || []).length > 0 ? `<span style="color:var(--success-text);font-weight:bold;">${p.drawings.length}</span>` : '<span style="color:var(--text3);">—</span>'}</td>
+  <td style="text-align:center;min-width:36px;">${(p.swatchImages || []).some(s => s) ? '<span style="color:var(--success-text);font-weight:bold;">✓</span>' : '<span style="color:var(--text3);">—</span>'}</td>
+  <td style="text-align:center;"><button onclick="event.stopPropagation();delProduct('${p.id}')" style="background:none;border:none;cursor:pointer;color:var(--text2);font-size:13px;padding:3px;" title="Delete product">✕</button></td>
 </tr>`).join("");
 }
 
