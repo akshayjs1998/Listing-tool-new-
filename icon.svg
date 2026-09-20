@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <rect width="512" height="512" rx="112" fill="#111111"/>
+  <!-- Top curved wing of Lyffin L -->
+  <path d="M 160 102 C 140 160 126 232 168 332 L 254 134 C 220 120 188 110 160 102 Z" fill="#ffffff"/>
+  <!-- Bottom folded flap of Lyffin L -->
+  <path d="M 168 332 L 384 306 L 384 400 C 324 416 244 414 168 332 Z" fill="#ffffff"/>
+</svg>
