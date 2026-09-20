@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 110" width="420" height="110">
+  <!-- Symbol -->
+  <g transform="translate(10, 5) scale(0.195)">
+    <rect width="512" height="512" rx="112" fill="#111111"/>
+    <path d="M 160 102 C 140 160 126 232 168 332 L 254 134 C 220 120 188 110 160 102 Z" fill="#ffffff"/>
+    <path d="M 168 332 L 384 306 L 384 400 C 324 416 244 414 168 332 Z" fill="#ffffff"/>
+  </g>
+  <!-- Wordmark -->
+  <text x="130" y="65" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="46" font-weight="700" fill="#111111" letter-spacing="1">LYFFIN</text>
+  <text x="132" y="86" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" font-weight="500" fill="#777777" letter-spacing="2">FACTORY LIST GENERATOR</text>
+</svg>

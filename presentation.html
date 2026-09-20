@@ -1,0 +1,613 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lyffin · Presentation Drawing Generator</title>
+<link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png"/>
+<link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png"/>
+<link rel="apple-touch-icon" href="/apple-touch-icon.png"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style>
+  :root{
+    --paper:#F3EEE7; --plate:#FFFFFF; --ink:#211E1A; --muted:#6F6759;
+    --accent:#A9754F; --hair:#D8D0C3; --hair2:#EAE3D7;
+    --serif: Georgia, "Times New Roman", serif;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  html,body{ font-family:var(--sans); color:var(--ink); background:#ece7de; }
+  .app{ display:flex; min-height:100vh; }
+  .panel{ width:400px; flex:0 0 400px; background:#faf7f1; border-right:1px solid var(--hair);
+    height:100vh; overflow-y:auto; position:sticky; top:0; }
+  .stage{ flex:1; overflow-x:auto; padding:24px; }
+
+  .panel .head{ padding:16px 18px; background:var(--ink); color:#F3EEE7;
+    display:flex; align-items:center; gap:10px; position:sticky; top:0; z-index:5; }
+  .panel .head .mk{ font-weight:700; letter-spacing:.26em; text-transform:uppercase; font-size:12px; }
+  .panel .head .sp{ flex:1; }
+  .panel .body{ padding:14px 18px 40px; }
+  .grp{ margin-bottom:18px; }
+  .grp > h3{ font-size:10px; letter-spacing:.18em; text-transform:uppercase; color:var(--accent);
+    border-bottom:1px solid var(--hair); padding-bottom:6px; margin-bottom:10px; }
+  .fld{ margin-bottom:9px; }
+  .fld label{ display:block; font-size:11px; color:var(--muted); margin-bottom:3px; }
+  .fld input, .fld textarea{ width:100%; font:inherit; font-size:13px; color:var(--ink);
+    background:#fff; border:1px solid var(--hair); border-radius:3px; padding:7px 9px; }
+  .fld input:focus, .fld textarea:focus{ outline:none; border-color:var(--accent); }
+  .fld textarea{ min-height:88px; resize:vertical; line-height:1.4; }
+  .two{ display:flex; gap:8px; } .two > .fld{ flex:1; }
+
+  .rowline{ display:flex; gap:6px; margin-bottom:6px; align-items:center; }
+  .rowline input{ font:inherit; font-size:12px; background:#fff; border:1px solid var(--hair);
+    border-radius:3px; padding:6px 7px; min-width:0; }
+  .del{ flex:0 0 26px; height:30px; border:1px solid var(--hair); background:#fff;
+    color:var(--muted); border-radius:3px; cursor:pointer; font-size:15px; line-height:1; }
+  .del:hover{ background:#f0eadf; color:var(--ink); }
+  .addrow{ margin-top:4px; font:inherit; font-size:12px; cursor:pointer; color:var(--accent);
+    background:none; border:1px dashed var(--hair); border-radius:3px; padding:6px 10px; width:100%; }
+  .addrow:hover{ background:#f4efe6; }
+
+  .btn{ font:inherit; font-size:12px; cursor:pointer; border:1px solid #5a5145;
+    background:#2b2721; color:#F3EEE7; padding:7px 11px; border-radius:3px; }
+  .btn:hover{ background:#3a352d; }
+  .btn.go{ background:var(--accent); border-color:var(--accent); color:#1b1712; font-weight:600; }
+  .btn.light{ background:#fff; color:var(--ink); border-color:var(--hair); }
+  .btn.light:hover{ background:#f0eadf; }
+  .rowbtns{ display:flex; gap:8px; }
+  .rowbtns > *{ flex:1; text-align:center; }
+  input[type=file]{ display:none; }
+  .thumb{ font-size:10px; color:var(--muted); margin-top:6px; line-height:1.5; }
+
+  .dcard{ border:1px solid var(--hair); border-radius:4px; padding:10px; margin-bottom:10px; background:#fff; }
+  .dcard .dhead{ display:flex; gap:6px; align-items:center; margin-bottom:6px; }
+  .dcard .dhead .n{ font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); flex:1; }
+  .dcard input{ font:inherit; font-size:12px; background:#fff; border:1px solid var(--hair);
+    border-radius:3px; padding:6px 7px; width:100%; }
+  .dcard .two{ gap:6px; margin-top:6px; }
+  .dcard .up{ margin-top:7px; display:flex; gap:6px; align-items:center; }
+  .dcard .stat{ font-size:10px; color:var(--muted); }
+
+  .stagebar{ display:flex; align-items:center; gap:12px; margin-bottom:16px; }
+  .stagebar .zoom{ display:flex; align-items:center; gap:7px; font-size:12px; color:var(--muted); }
+  .stagebar input[type=range]{ width:130px; }
+
+  #sheets{ transform-origin:top left; }
+  #sheets-wrap{ position:relative; }
+  .page{ width:210mm; height:297mm; background:var(--paper); margin:0 auto 22px;
+    position:relative; overflow:hidden; box-shadow:0 6px 26px rgba(0,0,0,.16);
+    -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  .pad{ position:absolute; top:20mm; left:20mm; right:20mm; bottom:18mm; }
+  h1,h2,.serif{ font-family:var(--serif); font-weight:400; }
+  .kicker{ font-size:8.5pt; letter-spacing:.32em; text-transform:uppercase; color:var(--muted); }
+  .logo-cover{ height:14mm; width:auto; display:block; }
+  .logo-head{ height:7mm; width:auto; display:block; }
+  .logoslot img{ display:block; }
+
+  .rhead{ display:flex; justify-content:space-between; align-items:center;
+    border-bottom:1px solid var(--hair); padding-bottom:6pt; }
+  .rhead .r{ font-size:8pt; letter-spacing:.22em; text-transform:uppercase; color:var(--muted); }
+  .rfoot{ position:absolute; left:20mm; right:20mm; bottom:12mm; display:flex;
+    justify-content:space-between; font-size:7.5pt; letter-spacing:.18em; text-transform:uppercase;
+    color:var(--muted); border-top:1px solid var(--hair); padding-top:6pt; }
+
+  .cover .top{ display:flex; justify-content:space-between; align-items:center; }
+  .cover .top .sub{ font-size:8pt; letter-spacing:.26em; text-transform:uppercase; color:var(--muted); }
+  .cover .center{ position:absolute; top:42%; left:20mm; right:20mm; transform:translateY(-50%); }
+  .cover h1{ font-size:52pt; line-height:.98; }
+  .cover .ptype{ margin-top:14pt; font-size:9.5pt; letter-spacing:.34em; text-transform:uppercase; color:var(--accent); }
+  .cover .rule{ width:46pt; height:1.4pt; background:var(--accent); margin-top:16pt; }
+  .meta{ position:absolute; left:20mm; right:20mm; bottom:18mm; display:flex;
+    border-top:1px solid var(--hair); padding-top:9pt; }
+  .meta div{ flex:1; } .meta .lab{ font-size:7pt; letter-spacing:.24em; text-transform:uppercase; color:var(--muted); }
+  .meta .val{ font-size:10pt; margin-top:3pt; }
+
+  .mid{ margin-top:34pt; } .secttitle{ font-size:24pt; margin-top:10pt; }
+  .sectnote{ font-size:9pt; color:var(--muted); margin-top:3pt; }
+  .plate{ background:var(--plate); border:1px solid var(--hair); margin-top:14pt; padding:14pt 16pt;
+    -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  .plate img{ max-width:100%; max-height:165mm; width:auto; height:auto; object-fit:contain; display:block; margin:0 auto; }
+  .plate .empty{ text-align:center; color:#c3baa9; font-size:9pt; letter-spacing:.12em;
+    text-transform:uppercase; padding:34pt 0; border:1.5px dashed var(--hair); }
+  .cap{ display:flex; justify-content:space-between; margin-top:9pt; font-size:8pt;
+    letter-spacing:.16em; text-transform:uppercase; color:var(--muted); }
+  .legend{ margin-top:14pt; display:flex; gap:22pt; font-size:8.5pt; color:var(--muted); flex-wrap:wrap; }
+  .legend b{ color:var(--ink); font-weight:600; }
+
+  .grid{ display:flex; gap:16pt; margin-top:16pt; } .col{ flex:1; }
+  .blocktitle{ font-size:8.5pt; letter-spacing:.28em; text-transform:uppercase; color:var(--accent);
+    border-bottom:1px solid var(--hair); padding-bottom:5pt; }
+  table{ width:100%; border-collapse:collapse; }
+  td{ padding:6.5pt 0; font-size:9.5pt; border-bottom:1px solid var(--hair2); vertical-align:baseline; }
+  td.lab{ color:var(--muted); } td.val{ text-align:right; font-variant-numeric:tabular-nums; }
+  .tbc{ color:var(--accent); font-style:italic; }
+  .notes{ font-size:8.5pt; color:var(--muted); line-height:1.55; margin-top:8pt; }
+  .approval{ margin-top:16pt; display:flex; gap:16pt; }
+  .approval .box{ flex:1; border:1px solid var(--hair); padding:10pt 12pt 16pt; }
+  .approval .lab{ font-size:7pt; letter-spacing:.22em; text-transform:uppercase; color:var(--muted); }
+  .approval .line{ margin-top:20pt; border-bottom:1px solid var(--ink); }
+
+  .ph-missing{ color:#c19a6b; font-style:italic; }
+
+  @page{ size:A4; margin:0; }
+  @media print{
+    html,body{ background:#fff; }
+    .panel, .stagebar{ display:none !important; }
+    .stage{ padding:0; overflow:visible; }
+    #sheets{ transform:none !important; }
+    #sheets-wrap{ width:auto !important; height:auto !important; }
+    .page{ margin:0; box-shadow:none; page-break-after:always; break-after:page; }
+    .page:last-child{ page-break-after:auto; }
+    .ph-missing{ display:none; }
+    .plate .empty{ border:none; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="panel">
+    <div class="head">
+      <a href="index.html" style="color:#c9bfae;text-decoration:none;font-size:12px;display:flex;align-items:center;gap:4px;" title="Back to Listing Tool">← Listing Tool</a>
+      <span class="mk">Lyffin</span><span style="font-size:12px;color:#c9bfae;">Presentation Drawing</span>
+      <span class="sp"></span>
+      <button class="btn go" onclick="saveAndPrint()">Save PDF</button>
+    </div>
+    <div class="body">
+
+      <div class="grp">
+        <h3>Project</h3>
+        <div class="fld"><label>Product title</label><input data-f="title"></div>
+        <div class="fld"><label>Project / subtitle line</label><input data-f="subtitle"></div>
+        <div class="two">
+          <div class="fld"><label>Client</label><input data-f="client"></div>
+          <div class="fld"><label>Date</label><input data-f="date"></div>
+        </div>
+        <div class="two">
+          <div class="fld"><label>Drawing ref &amp; revision</label><input data-f="ref"></div>
+          <div class="fld"><label>Units</label><input data-f="units"></div>
+        </div>
+        <div style="margin-top:6px;font-size:11px;color:var(--muted);">
+          <span id="lastRefInfo"></span>
+          <a href="#" onclick="toggleDrawingLog();return false;" style="color:inherit;text-decoration:underline;margin-left:6px;">Drawing number log</a>
+        </div>
+        <div id="drawingLogPanel" style="display:none;margin-top:8px;padding:8px 10px;background:var(--hair2);border:1px solid var(--hair);border-radius:6px;font-size:11px;max-height:160px;overflow-y:auto;"></div>
+      </div>
+
+      <div class="grp">
+        <h3>Drawings</h3>
+        <div class="rowbtns">
+          <label class="btn light">Upload drawing(s)<input type="file" accept="image/*,application/pdf" id="drawUpload" multiple></label>
+          <button class="btn light" id="addBlank">+ Add page</button>
+        </div>
+        <div class="thumb">Image or PDF. A multi-page PDF adds one page per drawing. Each drawing becomes its own sheet.</div>
+        <div id="drawList" style="margin-top:10px;"></div>
+      </div>
+
+      <div class="grp">
+        <h3>Dimension schedule</h3>
+        <div id="dimList"></div>
+        <button class="addrow" id="addDim">+ Add dimension</button>
+      </div>
+
+      <div class="grp">
+        <h3>Materials &amp; finishes</h3>
+        <div id="matList"></div>
+        <button class="addrow" id="addMat">+ Add material</button>
+      </div>
+
+      <div class="grp">
+        <h3>Notes</h3>
+        <div class="fld"><textarea data-f="notes"></textarea></div>
+      </div>
+
+      <details class="grp">
+        <summary style="cursor:pointer;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);">Labels, legend &amp; footer</summary>
+        <div style="margin-top:12px;">
+          <div class="fld"><label>Cover tagline (top-right)</label><input data-f="tagline"></div>
+          <div class="fld"><label>Cover eyebrow</label><input data-f="coverKicker"></div>
+          <div class="fld"><label>Legend on first drawing (label · value)</label><div id="legList"></div></div>
+          <div class="two">
+            <div class="fld"><label>Spec eyebrow</label><input data-f="specKicker"></div>
+            <div class="fld"><label>Spec title</label><input data-f="specTitle"></div>
+          </div>
+          <div class="fld"><label>Footer (left)</label><input data-f="footerLeft"></div>
+          <div class="fld"><label>Replace logo (optional — Lyffin logo is built in)</label>
+            <label class="btn light" style="display:inline-block;">Choose file<input type="file" accept="image/*" id="logoIn"></label></div>
+        </div>
+      </details>
+
+      <div class="grp">
+        <h3>Project file</h3>
+        <div class="rowbtns">
+          <button class="btn light" id="saveJson">Save project</button>
+          <label class="btn light">Open project<input type="file" accept=".json,application/json" id="openJson"></label>
+        </div>
+        <div class="thumb">Saves everything (incl. drawings) to a .json to reopen or reuse. Auto-saves in this browser too.</div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="stage">
+    <div class="stagebar">
+      <span style="font-size:12px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;">Preview</span>
+      <span class="zoom">Zoom <input type="range" id="zoom" min="40" max="100" value="68"><span id="zoomv">68%</span></span>
+    </div>
+    <div id="sheets-wrap">
+    <div id="sheets">
+      <section class="page cover">
+        <div class="pad">
+          <div class="top">
+            <span class="logoslot" data-logo><img class="logo-cover" alt="Lyffin" src="/logo.png"></span>
+            <div class="sub" data-p="tagline"></div>
+          </div>
+          <div class="center">
+            <div class="kicker" data-p="coverKicker"></div>
+            <h1 data-p="title"></h1>
+            <div class="ptype" data-p="subtitle"></div>
+            <div class="rule"></div>
+          </div>
+        </div>
+        <div class="meta">
+          <div><div class="lab">Client</div><div class="val" data-p="client"></div></div>
+          <div><div class="lab">Date</div><div class="val" data-p="date"></div></div>
+          <div><div class="lab">Drawing</div><div class="val" data-p="ref"></div></div>
+          <div><div class="lab">Units</div><div class="val" data-p="units"></div></div>
+        </div>
+      </section>
+
+      <div id="drawingPages"></div>
+
+      <section class="page">
+        <div class="pad">
+          <div class="rhead">
+            <span class="logoslot" data-logo><img class="logo-head" alt="Lyffin" src="/logo.png"></span>
+            <div class="r" data-p="headline"></div>
+          </div>
+          <div class="mid" style="margin-top:16pt">
+            <div class="kicker" data-p="specKicker"></div>
+            <h2 class="secttitle" data-p="specTitle"></h2>
+            <div class="grid">
+              <div class="col"><div class="blocktitle">Dimension schedule</div><table><tbody id="dimColA"></tbody></table></div>
+              <div class="col"><div class="blocktitle">&nbsp;</div><table><tbody id="dimColB"></tbody></table></div>
+            </div>
+            <div class="grid" style="margin-top:20pt">
+              <div class="col"><div class="blocktitle">Materials &amp; finishes</div><table><tbody id="matOut"></tbody></table></div>
+              <div class="col"><div class="blocktitle">Notes</div><div class="notes" id="notesOut"></div></div>
+            </div>
+            <div class="approval">
+              <div class="box"><div class="lab">Client approval — signature</div><div class="line"></div></div>
+              <div class="box"><div class="lab">Date</div><div class="line"></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="rfoot"><span data-p="footerLeft"></span><span data-p="ref"></span></div>
+      </section>
+    </div>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+const LOGO = "/logo.png";
+const KEY = "lyffin-presentation-draft-v2";
+try{ if(window.pdfjsLib){ pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"; } }catch(e){}
+
+const DEFAULT = {
+  logo: LOGO,
+  tagline:"Furniture · Design & Manufacture · Kochi",
+  coverKicker:"Presentation Drawing",
+  title:"Kids Chair",
+  subtitle:"Project — Jisha & Bonnie",
+  client:"Jisha & Bonnie",
+  date:"10 September 2026",
+  ref:"LYF-KC-01 · Rev 0",
+  units:"Centimetres",
+  specKicker:"Detail", specTitle:"Specification",
+  footerLeft:"Lyffin · Kochi",
+  notes:"Upholstered seat on a slim solid-timber frame with a rounded padded top rail. Construction and joinery to Lyffin factory standard.\n\nDimensions are nominal and subject to a manufacturing tolerance of ±0.5 cm. To be verified against site conditions prior to production.\n\nFinal material, finish and colourway to be confirmed on the sample approval.",
+  legend:[ {label:"Overall", value:"48.6 W · 40 D · 80 H"},
+           {label:"Seat height", value:"42"},
+           {label:"Backrest pad", value:"15"} ],
+  drawings:[ {title:"Elevations", capL:"Side elevation", capR:"Front elevation", note:"", image:""} ],
+  dims:[ {label:"Overall width", value:"48.6", unit:"cm"},
+         {label:"Overall depth", value:"40.0", unit:"cm"},
+         {label:"Overall height", value:"80.0", unit:"cm"},
+         {label:"Backrest — top pad height", value:"15.0", unit:"cm"},
+         {label:"Backrest — seat to pad", value:"23.0", unit:"cm"},
+         {label:"Seat height", value:"42.0", unit:"cm"},
+         {label:"Seat width (between legs)", value:"40.0", unit:"cm"},
+         {label:"Seat depth", value:"40.0", unit:"cm"},
+         {label:"Leg section", value:"2.5", unit:"cm"},
+         {label:"Front rail clearance", value:"4.8", unit:"cm"} ],
+  materials:[ {label:"Frame", value:"To be confirmed"},
+              {label:"Seat", value:"To be confirmed"},
+              {label:"Backrest pad", value:"To be confirmed"},
+              {label:"Upholstery", value:"To be confirmed"},
+              {label:"Finish", value:"To be confirmed"},
+              {label:"Colourway", value:"To be confirmed"} ]
+};
+
+let state = load() || JSON.parse(JSON.stringify(DEFAULT));
+if(!state.logo) state.logo = LOGO;
+
+function load(){ try{ const r=localStorage.getItem(KEY); return r?JSON.parse(r):null; }catch(e){ return null; } }
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){} }
+
+const LOG_KEY = "lyffin-presentation-drawing-log";
+function loadDrawingLog(){ try{ const r=localStorage.getItem(LOG_KEY); return r?JSON.parse(r):[]; }catch(e){ return []; } }
+function saveDrawingLog(log){ try{ localStorage.setItem(LOG_KEY, JSON.stringify(log)); }catch(e){} }
+
+function recordDrawingNumber(){
+  const ref=(state.ref||"").trim();
+  if(!ref) return;
+  const log=loadDrawingLog();
+  const last=log.length?log[log.length-1]:null;
+  if(last && last.ref===ref) return;
+  log.push({ref, title:(state.title||"").trim(), client:(state.client||"").trim(), at:new Date().toISOString()});
+  saveDrawingLog(log);
+}
+
+function updateLastRefInfo(){
+  const log=loadDrawingLog();
+  const el=document.getElementById("lastRefInfo");
+  if(!el) return;
+  el.textContent = log.length ? ("Last used: "+log[log.length-1].ref) : "No drawing numbers recorded yet";
+}
+
+window.toggleDrawingLog=function(){
+  const panel=document.getElementById("drawingLogPanel");
+  const opening = panel.style.display==="none";
+  panel.style.display = opening ? "block" : "none";
+  if(!opening) return;
+  const log=loadDrawingLog().slice().reverse();
+  if(!log.length){
+    panel.innerHTML='<div style="color:var(--muted);">No drawing numbers recorded yet — one is logged automatically the first time you use Save PDF.</div>';
+    return;
+  }
+  panel.innerHTML = log.map(e=>
+    '<div style="padding:4px 0;border-bottom:1px solid var(--hair);">'
+    +'<b>'+esc(e.ref)+'</b>'
+    +(e.title?' — '+esc(e.title):'')
+    +(e.client?' ('+esc(e.client)+')':'')
+    +'<span style="float:right;color:var(--muted);">'+new Date(e.at).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})+'</span>'
+    +'</div>'
+  ).join("");
+};
+
+window.saveAndPrint=function(){
+  recordDrawingNumber();
+  updateLastRefInfo();
+  window.print();
+};
+
+const esc = s => String(s==null?"":s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const ph  = (v,p) => (v && String(v).trim()) ? esc(v) : '<span class="ph-missing">[ '+p+' ]</span>';
+
+const SIMPLE = ["tagline","coverKicker","title","subtitle","client","date","ref","units",
+  "specKicker","specTitle","footerLeft","notes"];
+function bindSimple(){
+  SIMPLE.forEach(k=>{
+    const el = document.querySelector('[data-f="'+k+'"]'); if(!el) return;
+    el.value = state[k]!=null ? state[k] : "";
+    el.oninput = ()=>{ state[k]=el.value; render(); save(); };
+  });
+}
+
+function buildList(mountId, arr, cols){
+  const mount = document.getElementById(mountId); mount.innerHTML="";
+  arr.forEach((row,i)=>{
+    const line=document.createElement("div"); line.className="rowline";
+    cols.forEach(c=>{
+      const inp=document.createElement("input");
+      inp.value=row[c.key]!=null?row[c.key]:""; inp.placeholder=c.ph; inp.style.flex=c.flex||"1";
+      inp.addEventListener("input",()=>{ row[c.key]=inp.value; render(); save(); });
+      line.appendChild(inp);
+    });
+    const del=document.createElement("button"); del.className="del"; del.textContent="×";
+    del.onclick=()=>{ arr.splice(i,1); buildList(mountId,arr,cols); render(); save(); };
+    line.appendChild(del); mount.appendChild(line);
+  });
+}
+const dimCols=[{key:"label",ph:"Dimension",flex:"2.4"},{key:"value",ph:"Value",flex:"1"},{key:"unit",ph:"cm",flex:"0.6"}];
+const matCols=[{key:"label",ph:"Item",flex:"1.4"},{key:"value",ph:"Spec",flex:"1.6"}];
+const legCols=[{key:"label",ph:"Label",flex:"1"},{key:"value",ph:"Value",flex:"1.6"}];
+
+function buildDrawings(){
+  const mount=document.getElementById("drawList"); mount.innerHTML="";
+  state.drawings.forEach((d,i)=>{
+    const card=document.createElement("div"); card.className="dcard";
+    const head=document.createElement("div"); head.className="dhead";
+    const n=document.createElement("div"); n.className="n"; n.textContent="Drawing "+String(i+1).padStart(2,"0");
+    const del=document.createElement("button"); del.className="del"; del.textContent="×";
+    del.onclick=()=>{ state.drawings.splice(i,1); if(!state.drawings.length) state.drawings.push({title:"Elevations",capL:"",capR:"",note:"",image:""}); buildDrawings(); render(); save(); };
+    head.appendChild(n); head.appendChild(del); card.appendChild(head);
+
+    const t=document.createElement("input"); t.placeholder="Sheet title (e.g. Elevations)"; t.value=d.title||"";
+    t.addEventListener("input",()=>{ d.title=t.value; render(); save(); }); card.appendChild(t);
+
+    const two=document.createElement("div"); two.className="two";
+    const cl=document.createElement("input"); cl.placeholder="Left caption"; cl.value=d.capL||"";
+    cl.addEventListener("input",()=>{ d.capL=cl.value; render(); save(); });
+    const cr=document.createElement("input"); cr.placeholder="Right caption"; cr.value=d.capR||"";
+    cr.addEventListener("input",()=>{ d.capR=cr.value; render(); save(); });
+    two.appendChild(cl); two.appendChild(cr); card.appendChild(two);
+
+    const nt=document.createElement("input"); nt.style.marginTop="6px"; nt.placeholder="Note (optional)"; nt.value=d.note||"";
+    nt.addEventListener("input",()=>{ d.note=nt.value; render(); save(); }); card.appendChild(nt);
+
+    const up=document.createElement("div"); up.className="up";
+    const lab=document.createElement("label"); lab.className="btn light"; lab.textContent = d.image?"Replace image / PDF":"Upload image / PDF";
+    const fin=document.createElement("input"); fin.type="file"; fin.accept="image/*,application/pdf";
+    fin.addEventListener("change", async e=>{
+      const files=[...e.target.files]; if(!files.length) return;
+      lab.textContent="Reading…";
+      const imgs=await filesToImages(files);
+      if(imgs.length){
+        d.image=imgs[0];
+        for(let k=imgs.length-1;k>=1;k--) state.drawings.splice(i+1,0,{title:d.title,capL:"",capR:"",note:"",image:imgs[k]});
+      }
+      buildDrawings(); render(); save();
+    });
+    lab.appendChild(fin);
+    const st=document.createElement("span"); st.className="stat"; st.textContent = d.image?"Loaded ✓":"No file";
+    up.appendChild(lab); up.appendChild(st); card.appendChild(up);
+
+    mount.appendChild(card);
+  });
+}
+
+async function pdfToImages(file, targetW){
+  targetW = targetW||1800;
+  if(!window.pdfjsLib){ alert("Reading a PDF needs an internet connection (to load the PDF engine). You can upload a PNG or JPG instead, which works offline."); return []; }
+  try{
+    const buf = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({data:buf}).promise;
+    const out=[];
+    for(let p=1;p<=pdf.numPages;p++){
+      const page=await pdf.getPage(p);
+      const v1=page.getViewport({scale:1});
+      const vp=page.getViewport({scale: targetW/v1.width});
+      const canvas=document.createElement("canvas");
+      canvas.width=Math.round(vp.width); canvas.height=Math.round(vp.height);
+      const ctx=canvas.getContext("2d");
+      ctx.fillStyle="#ffffff"; ctx.fillRect(0,0,canvas.width,canvas.height);
+      await page.render({canvasContext:ctx, viewport:vp}).promise;
+      out.push(canvas.toDataURL("image/png"));
+    }
+    return out;
+  }catch(err){ alert("Could not read that PDF. Try exporting it again, or upload a PNG/JPG."); return []; }
+}
+function imageFileToDataURL(file){
+  return new Promise(res=>{ const r=new FileReader(); r.onload=e=>res(e.target.result); r.readAsDataURL(file); });
+}
+async function filesToImages(files){
+  const out=[];
+  for(const f of files){
+    if(f.type==="application/pdf" || /\.pdf$/i.test(f.name)){ const imgs=await pdfToImages(f); out.push(...imgs); }
+    else if(f.type.startsWith("image/")){ out.push(await imageFileToDataURL(f)); }
+  }
+  return out;
+}
+
+document.getElementById("drawUpload").addEventListener("change", async e=>{
+  const files=[...e.target.files]; if(!files.length) return;
+  const imgs=await filesToImages(files);
+  if(state.drawings.length===1 && !state.drawings[0].image){ state.drawings=[]; }
+  imgs.forEach(im=> state.drawings.push({title:"Elevations",capL:"",capR:"",note:"",image:im}));
+  buildDrawings(); render(); save(); e.target.value="";
+});
+document.getElementById("addBlank").onclick=()=>{ state.drawings.push({title:"Elevations",capL:"",capR:"",note:"",image:""}); buildDrawings(); render(); save(); };
+
+document.getElementById("addDim").onclick=()=>{ state.dims.push({label:"",value:"",unit:"cm"}); buildList("dimList",state.dims,dimCols); render(); save(); };
+document.getElementById("addMat").onclick=()=>{ state.materials.push({label:"",value:""}); buildList("matList",state.materials,matCols); render(); save(); };
+
+document.getElementById("logoIn").addEventListener("change", async e=>{
+  const f=e.target.files[0]; if(!f) return; state.logo=await imageFileToDataURL(f); render(); save();
+});
+
+function setP(key,val){ document.querySelectorAll('[data-p="'+key+'"]').forEach(n=> n.innerHTML=val); }
+function headline(){ const t=(state.title||"").trim(), c=(state.client||"").trim();
+  return t + ((t&&c)?" — ":"") + c; }
+function legendBlock(){
+  const items=state.legend.filter(l=> (l.label||l.value));
+  if(!items.length) return "";
+  return '<div class="legend">'+items.map(l=>'<div><b>'+esc(l.label||"")+'</b> &nbsp;'+esc(l.value||"")+'</div>').join("")+'</div>';
+}
+function drawPage(d,i){
+  const nn = state.drawings.length>1 ? " "+String(i+1).padStart(2,"0") : "";
+  const HEAD = headline(); const headEsc = HEAD?esc(HEAD):'<span class="ph-missing">[ header ]</span>';
+  const cap = (d.capL||d.capR) ? '<div class="cap"><span>'+esc(d.capL||"")+'</span><span>'+esc(d.capR||"")+'</span></div>' : '';
+  const note = (d.note||"").trim() ? '<div class="sectnote">'+esc(d.note)+'</div>' : '';
+  const img = d.image ? '<img src="'+d.image+'" alt="">' : '<div class="empty">Upload drawing (image or PDF)</div>';
+  const legend = i===0 ? legendBlock() : '';
+  return '<section class="page"><div class="pad">'
+    + '<div class="rhead"><span class="logoslot"><img class="logo-head" src="'+state.logo+'" alt="Lyffin"></span><div class="r">'+headEsc+'</div></div>'
+    + '<div class="mid"><div class="kicker">Drawing'+nn+'</div>'
+    + '<h2 class="secttitle">'+ph(d.title,"Sheet title")+'</h2>'+note
+    + '<div class="plate">'+img+cap+'</div>'+legend
+    + '</div></div>'
+    + '<div class="rfoot"><span>'+ph(state.footerLeft,"footer")+'</span><span>'+ph(state.ref,"ref")+'</span></div>'
+    + '</section>';
+}
+function render(){
+  const nameParts=[state.title,state.subtitle,state.ref].map(s=>(s||"").trim()).filter(Boolean);
+  document.title=nameParts.length?nameParts.join("_"):"Lyffin · Presentation Drawing Generator";
+  setP("tagline", ph(state.tagline,"tagline"));
+  setP("coverKicker", ph(state.coverKicker,"eyebrow"));
+  setP("title", ph(state.title,"Product title"));
+  setP("subtitle", ph(state.subtitle,"Project line"));
+  setP("client", ph(state.client,"Client"));
+  setP("date", ph(state.date,"Date"));
+  setP("ref", ph(state.ref,"Ref"));
+  setP("units", ph(state.units,"Units"));
+  setP("specKicker", ph(state.specKicker,"eyebrow"));
+  setP("specTitle", ph(state.specTitle,"Title"));
+  setP("footerLeft", ph(state.footerLeft,"Footer"));
+  const HEAD=headline(); setP("headline", HEAD?esc(HEAD):'<span class="ph-missing">[ header ]</span>');
+
+  document.querySelectorAll("[data-logo] img").forEach(img=> img.src=state.logo);
+  document.getElementById("drawingPages").innerHTML = state.drawings.map((d,i)=>drawPage(d,i)).join("");
+
+  const rows=state.dims.filter(d=>(d.label||"").trim()||(d.value||"").trim()).map(d=>{
+    const val=(d.value||d.unit)?('<b>'+esc(d.value||"")+'</b> '+esc(d.unit||"")).trim():'<span class="ph-missing">[ value ]</span>';
+    return '<tr><td class="lab">'+ph(d.label,"dimension")+'</td><td class="val">'+val+'</td></tr>';
+  });
+  const half=Math.ceil(rows.length/2);
+  document.getElementById("dimColA").innerHTML=rows.slice(0,half).join("");
+  document.getElementById("dimColB").innerHTML=rows.slice(half).join("");
+
+  document.getElementById("matOut").innerHTML=state.materials.filter(m=>(m.label||"").trim()||(m.value||"").trim()).map(m=>{
+    const tbc=/to be confirmed/i.test(m.value||"");
+    const val=(m.value||"").trim()?'<span class="'+(tbc?"tbc":"")+'">'+esc(m.value)+'</span>':'<span class="ph-missing">[ spec ]</span>';
+    return '<tr><td class="lab">'+ph(m.label,"item")+'</td><td class="val">'+val+'</td></tr>';
+  });
+
+  document.getElementById("notesOut").innerHTML=(state.notes||"").trim()?esc(state.notes).replace(/\n/g,"<br>"):'<span class="ph-missing">[ notes ]</span>';
+  applyZoom();
+}
+
+document.getElementById("saveJson").onclick=()=>{
+  const blob=new Blob([JSON.stringify(state,null,2)],{type:"application/json"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download=(state.ref||state.title||"presentation").replace(/[^\w.-]+/g,"_")+".json";
+  a.click(); URL.revokeObjectURL(a.href);
+};
+document.getElementById("openJson").addEventListener("change", e=>{
+  const f=e.target.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload=ev=>{
+    try{
+      const obj=JSON.parse(ev.target.result);
+      if(obj.drawing && !obj.drawings){ obj.drawings=[{title:obj.elevTitle||"Elevations",capL:obj.capLeft||"",capR:obj.capRight||"",note:obj.elevNote||"",image:obj.drawing}]; }
+      state=Object.assign(JSON.parse(JSON.stringify(DEFAULT)), obj);
+      if(!state.logo) state.logo=LOGO;
+      if(!Array.isArray(state.drawings)||!state.drawings.length) state.drawings=[{title:"Elevations",capL:"Side elevation",capR:"Front elevation",note:"",image:""}];
+      bindSimple(); buildAll(); render(); save();
+    }catch(err){ alert("Could not read that project file."); }
+  };
+  r.readAsText(f);
+});
+
+const zoom=document.getElementById("zoom");
+function applyZoom(){
+  const factor=zoom.value/100;
+  const sheets=document.getElementById("sheets");
+  const wrap=document.getElementById("sheets-wrap");
+  sheets.style.transform="scale("+factor+")";
+  wrap.style.width=(sheets.offsetWidth*factor)+"px";
+  wrap.style.height=(sheets.offsetHeight*factor)+"px";
+  document.getElementById("zoomv").textContent=zoom.value+"%";
+}
+zoom.addEventListener("input", applyZoom);
+
+function buildAll(){ buildList("dimList",state.dims,dimCols); buildList("matList",state.materials,matCols); buildList("legList",state.legend,legCols); buildDrawings(); }
+bindSimple(); buildAll(); render();
+applyZoom();
+updateLastRefInfo();
+</script>
+</body>
+</html>
