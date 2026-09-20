@@ -595,33 +595,29 @@ function renderProducts() {
 
 function renderProductsInto(c) {
   c.innerHTML = `
-<div id="products-layout">
-  <div style="min-width:0;width:100%;">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem;flex-wrap:wrap;gap:8px;">
+<div id="products-layout" style="display:grid;grid-template-columns:1fr 320px;gap:12px;">
+  <div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem;">
       <div style="font-size:14px;font-weight:600;">${products.length} products <span style="font-size:12px;font-weight:400;color:var(--text2);">· ${totalPieces()} pieces</span></div>
       <div style="display:flex;gap:6px;">
         <button class="btn" onclick="addProduct()">+ Add</button>
         <button class="btn primary" onclick="saveCurrentProject();goStep(2);">Review →</button>
       </div>
     </div>
-    <div class="scroll-hint">
-      <span>👉 Swipe table sideways to view all columns</span>
-      <span>Dimensions · Details · Photos · Drw · Swatch →</span>
-    </div>
-    <div class="tbl-wrap"><div class="table-scroll-container">
+    <div class="tbl-wrap"><div style="overflow-x:auto;">
       <table class="tbl"><thead><tr>
-        <th style="width:24px;"></th>
-        <th style="width:44px;">#</th>
-        <th style="min-width:140px;">Product name</th>
-        <th style="width:46px;">Qty</th>
-        <th style="min-width:120px;">Area / Placement</th>
-        <th style="min-width:120px;">Dimensions</th>
-        <th style="min-width:140px;">Details</th>
-        <th style="width:36px;text-align:center;" title="Product Photo">📷</th>
-        <th style="width:36px;text-align:center;" title="Annotation">✏</th>
-        <th style="width:36px;text-align:center;" title="Technical Drawings">📐</th>
-        <th style="width:36px;text-align:center;" title="Fabric / Swatches">🧵</th>
-        <th style="width:24px;"></th>
+        <th style="width:24px" class="mobile-hide"></th>
+        <th style="width:36px">#</th>
+        <th style="min-width:140px">Product name</th>
+        <th style="width:40px">Qty</th>
+        <th style="min-width:120px" class="mobile-hide">Area / Placement</th>
+        <th style="min-width:120px" class="mobile-hide">Dimensions</th>
+        <th style="min-width:120px" class="mobile-hide">Details</th>
+        <th style="width:32px" class="mobile-hide">📷</th>
+        <th style="width:32px" class="mobile-hide">✏</th>
+        <th style="width:32px" class="mobile-hide">📐</th>
+        <th style="width:32px" class="mobile-hide">🧵</th>
+        <th style="width:22px" class="mobile-hide"></th>
       </tr></thead>
       <tbody id="prod-tbody"></tbody></table>
     </div></div>
@@ -631,7 +627,7 @@ function renderProductsInto(c) {
     </div>
   </div>
   <div class="detail" id="detail-panel">
-    <button id="detail-close-btn" onclick="closeMobileDetail()" style="display:none;width:100%;margin-bottom:12px;padding:8px;border:1px solid var(--border);border-radius:6px;background:var(--bg2);font-size:13px;cursor:pointer;color:var(--text2);">← Back to products table</button>
+    <button id="detail-close-btn" onclick="closeMobileDetail()" style="display:none;width:100%;margin-bottom:12px;padding:8px;border:1px solid var(--border);border-radius:6px;background:var(--bg2);font-size:13px;cursor:pointer;color:var(--text2);">← Back to products</button>
     <div style="text-align:center;padding:3rem 1rem;color:var(--text2);">
       <div style="font-size:28px;margin-bottom:8px;opacity:.4;">🖱</div>
       <div style="font-size:13px;">Click a row to edit details</div>

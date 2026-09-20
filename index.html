@@ -66,16 +66,15 @@ input:focus,textarea:focus,select:focus{border-color:#555;}
 .btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:1rem;}
 #products-layout{display:grid;grid-template-columns:1fr 320px;gap:12px;}
 .tbl-wrap{border:.5px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;}
-.table-scroll-container{width:100%;}
-.tbl{width:100%;min-width:100%;border-collapse:collapse;font-size:12px;}
-.scroll-hint{display:none;}
+.tbl{min-width:100%;border-collapse:collapse;font-size:12px;}
 @media(max-width:860px){
-  #products-layout{display:flex;flex-direction:column;gap:14px;}
-  .table-scroll-container{width:100%;max-width:100%;min-width:0;overflow-x:auto;-webkit-overflow-scrolling:touch;touch-action:pan-x pan-y;overscroll-behavior-x:contain;}
-  .table-scroll-container::-webkit-scrollbar{height:6px;}
-  .table-scroll-container::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px;}
-  .tbl{min-width:760px;width:auto;}
-  .scroll-hint{display:flex;align-items:center;justify-content:space-between;font-size:11px;color:var(--text2);background:var(--bg2);padding:5px 9px;border-radius:var(--radius);border:.5px solid var(--border);margin-bottom:8px;gap:8px;}
+  #products-layout{display:flex !important;flex-direction:column !important;gap:14px;width:100% !important;max-width:100% !important;min-width:0 !important;}
+  #products-layout > div{width:100% !important;max-width:100% !important;min-width:0 !important;}
+  .tbl-wrap{width:100% !important;max-width:100% !important;min-width:0 !important;}
+  .tbl-wrap > div{width:100% !important;max-width:100% !important;min-width:0 !important;overflow-x:auto !important;-webkit-overflow-scrolling:touch !important;touch-action:pan-x pan-y !important;}
+  .tbl-wrap > div::-webkit-scrollbar{height:6px;}
+  .tbl-wrap > div::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px;}
+  .tbl{min-width:840px !important;width:auto !important;}
   .app{padding:.75rem .5rem;}
   .panel{padding:1rem .75rem;}
   .detail{position:static;max-height:none;width:100%;}
