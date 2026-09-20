@@ -2,5 +2,7 @@
   "name": "Lyffin Listing Tool",
   "description": "Factory list generator, quotation verification, placement tags, and presentation drawing tool with PWA offline support.",
   "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
 }
